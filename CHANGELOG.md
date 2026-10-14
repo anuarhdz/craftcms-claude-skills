@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.20.0 -- 2026-10-14
+
+Folds in Craft CMS 5.11.5 and 5.11.5.1 (released 2026-10-07 and 2026-10-08) and the plugin releases since the pack's last plugin pass: Formie 3.1.22 to 3.1.47, Feed Me 6.15.0 to 6.16.1, Blitz 5.12.10 to 5.13.4, CKEditor 5.9.0, Knock Knock 3.0.10 to 3.0.13, Navigation 4.0.3 to 4.0.7, Warp 5.0.3 and Vite 5.0.2. Every claim was checked against the tagged source or the fix diff on 2026-10-14. Also scopes the code reviewer's plugin file-organization checks to plugins ([#17](https://github.com/michtio/craftcms-claude-skills/issues/17), thanks **[@john-henry](https://github.com/john-henry)**).
+
+Not folded in: the two 5.11.5 advisories (GHSA-cphx-cx67-jcqj, GHSA-4rg3-m2h8-grqw) are not published yet, so the only guidance is "be on 5.11.5.1"; Craft's `## Unreleased` entries; Hyper 2.3.11 to 2.3.16, Element API 4.3.0, Embedded Assets 5.4.9, Password Policy 5.1.3, Sprig 3.7.3, Typogrify 5.0.3, Timeloop 5.0.0, Imager-X 6.1.1 to 6.1.2 and SEOmatic 5.1.22, whose changes touch nothing the references claim.
+
+### Added
+
+- **`skills/craftcms/references/elements.md`** -- pitfall: a custom nested element with no `canSave()` of its own is authorized only through `Element::canSave()` falling through to the field's `canSaveElement()`. Craft 5.11.5 limited that fallback to draft-capable types for one day, which made every third-party nested element without `hasDrafts()` uneditable (craftcms/cms#19898, reverted in 5.11.5.1). Implement `canSave()` on the element; check the canonical owner too when the type has no drafts, as `Addresses::canSaveElement()` does since 5.11.5.1.
+- **`skills/craftcms/references/config-app.md`** -- `DbCache` plus `Connection::cache()` recursed until memory ran out on 5.11.4 (craftcms/cms#19877); 5.11.5 wraps the schema lookup in `noCache()`.
+- **`skills/craft-plugins/references/formie.md`** -- redirect URLs resolve strict `{token}` placeholders through `Templates::renderObjectTokens()` since 3.1.42 (the "rendered as an object template" wording was no longer true); notification content renders in verbb/base's explicit Twig sandbox since 3.1.36, with `collect()` gone in 3.1.39 and `EVENT_MODIFY_TWIG_ENVIRONMENT` additive since 3.1.42; File Upload subpaths take `{formName}`, `{formHandle}` and `{siteHandle}` from 3.1.45; the cached-form token refresh raced Craft's asynchronous `csrfInput()` until 3.1.46 and doubled the subdomain under `CRAFT_BASE_CP_URL` until 3.1.37; settings screens require `formie-accessSettings` since 3.1.28; signature image URLs carry an access token since 3.1.44 (`allowLegacySignatureImageUrls`); the 3.1.31 to 3.1.44 advisory run makes 3.1.47 the floor.
+- **`skills/craft-plugins/references/feed-me.md`** -- 6.16.0 rejects feed and asset URLs that resolve to private IPs unless the hostname is in `allowedPrivateHosts` (config file only, `*.` wildcard), which catches every DDEV import; config example updated. 6.16.0 and 6.16.1 close one missing-authorization and three SSRF advisories. 6.15.0 removed the "Clear pending job queue" utility and added native Link field mapping.
+- **`skills/craft-plugins/references/blitz.md`** -- `CacheOptionsModel::addTags()` (5.12.10+) merges into the page's tags where `tags()` replaces them; `batchInsertSize` (5.12.14+, default 50); dependency tracking is site-aware from 5.13.0, so clear the cache after that update and expect translated content to refresh only its own site's pages; 5.12.16 stops POST requests on pages with cached includes from being processed twice.
+- **`skills/craft-plugins/references/ckeditor.md`** -- 5.9.0: in `<img>` image mode a dynamic default upload subpath no longer throws `InvalidSubpathException` on new elements; uploads go to the user's temporary folder and `afterElementSave()` moves them, creating the folder on canonical saves only. CKEditor core moved to 48.5.2; the package-loading pattern verified at 5.8.0 is unchanged.
+- **`skills/craft-plugins/references/knock-knock.md`** -- 3.0.11 and 3.0.12 closed eleven access-control, CSRF, open-redirect and resource-exhaustion advisories; 3.0.13 is the floor.
+- **`skills/craft-plugins/references/navigation.md`** -- 4.0.4 information-disclosure fix, 4.0.5 legacy `{siteUrl}` token rendering, 4.0.7 menu settings hidden when `allowAdminChanges` is off.
+- **`skills/craft-plugins/references/warp.md`** -- sign-in on Craft Cloud errored below 5.0.3 because Cloud's session component is not `craft\web\Session`.
+- **`skills/craft-plugins/references/vite.md`** -- Vite 6 and later answer the `checkDevServer` ping with `403`; plugin 5.0.2+ accepts it (nystudio107/craft-vite#103).
+
+### Fixed
+
+- **`agents/craft-code-reviewer.md`** -- the "File organization (PHP plugins)" checks also fired on modules, flagging every module with services as **Important** for lacking a `ServicesTrait`, `PluginTrait` or `extra.class`, none of which a module has. The review workflow now classifies PHP as a plugin (`composer.json` declares `extra.class`) or a module (`modules/*`, bootstrapped from `config/app.php`), the plugin section says it applies to plugins only, and a new "File organization (modules)" section carries the module checks from the pack's own module template: services registered with `setComponents()`, `controllerNamespace` set before `parent::init()`, template roots, translations and aliases registered in `init()`, `Craft::$app->onInit()` for work that needs a booted app, and a long `init()` downgraded to a Suggestion.
+
 ## 1.19.0 -- 2026-10-07
 
 Makes every skill's frontmatter conform to the [Agent Skills specification](https://agentskills.io/specification), so spec-strict clients such as PhpStorm can import the pack ([#16](https://github.com/michtio/craftcms-claude-skills/issues/16)).
