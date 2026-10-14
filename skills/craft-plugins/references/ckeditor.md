@@ -116,7 +116,7 @@ Ensure HTML Purifier permits the corresponding classes and elements on save.
 
 CKEditor fields can render images two ways:
 
-- **`$imageMode = 'img'`** (default) — images are inserted as `<img>` tags directly in the content. Simplest, but no caption or extra per-image fields. Since 5.7.0 the `alt` attribute is filled from the asset's Alternative Text and stays in sync with it until an editor changes it in the alt-text modal (which also has a "Sync from asset" button); before 5.7.0 it was not populated from the asset.
+- **`$imageMode = 'img'`** (default) — images are inserted as `<img>` tags directly in the content. Simplest, but no caption or extra per-image fields. Since 5.7.0 the `alt` attribute is filled from the asset's Alternative Text and stays in sync with it until an editor changes it in the alt-text modal (which also has a "Sync from asset" button); before 5.7.0 it was not populated from the asset. Since 5.9.0 a dynamic default upload subpath (`{slug}`, `{id}`, anything in braces) no longer throws `InvalidSubpathException` while editing a new element: uploads land in the user's temporary folder and `afterElementSave()` moves them into the resolved folder, creating it on a canonical save and, like the Assets field, only moving a draft's uploads when the folder already exists (craftcms/ckeditor#618).
 - **`$imageMode = 'entries'`** — each image is inserted as a nested entry of a configured type. The image entry type carries an Assets field plus any other fields you want (alt text, caption, focal point overrides). Editors interact with images as element chips.
 
 To use entries mode, configure `$imageEntryTypeUid` (the entry type UID) and `$imageFieldUid` (the Assets field UID inside that entry type). The entry type's field layout determines what editors can configure per-image.
@@ -272,7 +272,7 @@ Before 5.6.0, custom `removePlugins` config values were silently ignored. As of 
 
 ## Extending with Custom Plugins (5.0.0+ — Breaking)
 
-Third-party CKEditor plugins ship as **ES modules** loaded through the CP import map as of plugin 5.0.0 (craftcms/ckeditor#363); the 4.x DLL-style bundles no longer work. The pattern (verified against `craftcms/ckeditor` 5.8.0 `README.md` and `src/Plugin.php`):
+Third-party CKEditor plugins ship as **ES modules** loaded through the CP import map as of plugin 5.0.0 (craftcms/ckeditor#363); the 4.x DLL-style bundles no longer work. The pattern (verified against `craftcms/ckeditor` 5.8.0 `README.md` and `src/Plugin.php`; neither changed in 5.9.0, which bumped CKEditor itself to 48.5.2):
 
 1. **Asset bundle** extending `craft\ckeditor\web\assets\BaseCkeditorPackageAsset`, declaring the import-map `$namespace` (recommended form `@{vendor}/ckeditor5-{handle}`), the entry file as a **module**, and what the package provides:
 

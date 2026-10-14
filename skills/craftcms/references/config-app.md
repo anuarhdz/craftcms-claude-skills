@@ -103,7 +103,7 @@ The default `cache` component is `yii\caching\FileCache` writing to `storage/run
 
 ### Database Cache
 
-Use `craft\cache\DbCache` (Craft's subclass of Yii's) with `'cacheTable' => Table::CACHE`. The `{{%cache}}` table is not created on install: run `ddev craft setup/db-cache-table` first. Before Craft 5.11.4, with `DbCache` already configured and schema caching on, `setup/php-session-table` could roll back because invalidating the schema cache hit the not-yet-created cache table (craftcms/cms#19742) -- run `setup/db-cache-table` first, or be on 5.11.4+.
+Use `craft\cache\DbCache` (Craft's subclass of Yii's) with `'cacheTable' => Table::CACHE`. The `{{%cache}}` table is not created on install: run `ddev craft setup/db-cache-table` first. Before Craft 5.11.4, with `DbCache` already configured and schema caching on, `setup/php-session-table` could roll back because invalidating the schema cache hit the not-yet-created cache table (craftcms/cms#19742) -- run `setup/db-cache-table` first, or be on 5.11.4+. On 5.11.4 exactly, `DbCache` plus `Craft::$app->getDb()->cache(...)` recursed until memory ran out, because `setValue()` introspected the cache table inside the query-cache scope and cached that query too (craftcms/cms#19877); 5.11.5 wraps the lookup in `noCache()`, so be on 5.11.5+ before combining the two.
 
 ### Redis Cache
 
