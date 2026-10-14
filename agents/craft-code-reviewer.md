@@ -21,7 +21,7 @@ You are a code review specialist for Craft CMS development. You review implement
 ## Review workflow
 
 1. Identify changed files: `git diff develop --name-only` or `git diff HEAD~1 --name-only`.
-2. Classify the diff: PHP? Twig? JS? CSS? Config? Migrations? Tests? Load the matching skills (above); the classification also decides which checklist sections apply.
+2. Classify the diff: PHP? Twig? JS? CSS? Config? Migrations? Tests? Load the matching skills (above); the classification also decides which checklist sections apply. For PHP, also decide what you are reviewing: a **plugin** (`composer.json` declares `extra.class`, installed through Composer) or a **module** (lives under `modules/`, bootstrapped from `config/app.php`, no `extra.class`). The two file-organization sections below are mutually exclusive.
 3. Read each changed file thoroughly.
 4. Check against the relevant sections of the checklist below.
 5. Generate a findings report grouped by severity.
@@ -69,6 +69,8 @@ You are a code review specialist for Craft CMS development. You review implement
 
 ## File organization (PHP plugins)
 
+These checks apply only to Craft plugins. Modules register services with `setComponents()` in the module class and have no `ServicesTrait`, `PluginTrait` or `extra.class`; don't flag their absence. Use the module section below instead.
+
 - Main plugin class named after the plugin handle (e.g. `src/Forum.php` with `class Forum`), never `src/Plugin.php` / `class Plugin`. The Craft generator's default has to be renamed before shipping — every plugin's main class would otherwise be `Plugin`, distinguished only by namespace alias (ambiguous in multi-plugin source trees, grep-unfriendly). Any `src/Plugin.php` in the diff → **Critical**.
 - `composer.json` `extra.class` matches the renamed FQN. File/class name disagreeing with `extra.class` → **Critical** (plugin fails to load).
 - Plugins with 2+ services use `src/services/ServicesTrait.php` with one typed `getX(): X` per service. Services declared inline on the main class, or accessed only via `@property-read` tags on the main class, instead of through a trait → **Important**.
@@ -76,6 +78,17 @@ You are a code review specialist for Craft CMS development. You review implement
 - `@property` tags for services live on the trait's class-level docblock. Duplicating them as `@property-read` on the main plugin class → **Suggestion** (drift hazard — both can fall out of sync).
 - Main plugin class docblock describes what the plugin does, not which services it registers. Docblocks that enumerate services ("wires three services: X, Y, Z") drift the moment a service is added or removed → **Suggestion**.
 - Event listeners / URL rules / plugin lifecycle overrides live in `src/base/PluginTrait.php`, not inline in `init()`. An `init()` longer than ~20 lines that wires events directly → **Important**.
+
+## File organization (modules)
+
+Apply only to modules (`modules/*`, bootstrapped from `config/app.php`). The entry class is conventionally `Module.php` / `class Module extends \yii\base\Module`; never flag it under the plugin rule above.
+
+- Services extend `yii\base\Component` and are registered with `setComponents()` in the module's `init()` (or under the `components` key of the module's config in `config/app.php`). No `ServicesTrait` or `static config()` is expected. Business logic in controllers instead of a service → **Important**.
+- When the module exposes typed service getters, each narrows Yii's `Component::get()` return with `assert($component instanceof Type)` before returning, as for plugins → **Important** when missing.
+- `controllerNamespace` is set *before* `parent::init()`, switching on `Craft::$app->getRequest()->getIsConsoleRequest()` when the module has console controllers. Set after `parent::init()`, or missing with console controllers present → **Important** (commands are not discoverable). The module must also be listed in `bootstrap` in `config/app.php` for console commands and event listeners → **Verify:** when the config is not in the diff.
+- Template roots (`View::EVENT_REGISTER_CP_TEMPLATE_ROOTS` / `EVENT_REGISTER_SITE_TEMPLATE_ROOTS`), the translation category (`PhpMessageSource` on `Craft::$app->i18n->translations`), and the namespace alias (`Craft::setAlias()`) are registered manually in `init()`; nothing is automatic for a module. Templates rendered or `Craft::t('<handle>', …)` used without the matching registration → **Important** (blank output, untranslated strings).
+- Work that needs a fully booted app (reading the current user, request, or other plugins' services) is deferred with `Craft::$app->onInit()`, not run inline in `init()` → **Important**.
+- A long `init()` is normal for a module, since every registration lives there. Wiring split into private `_register*()` methods is a **Suggestion**, never **Important**.
 
 ## Twig template checks (when .twig files are in scope)
 
