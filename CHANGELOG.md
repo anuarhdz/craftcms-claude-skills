@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.20.1 -- 2026-10-15
+
+Closes three gaps in the eager-loading reference, each verified against the `craftcms/cms` `5.x` source on 2026-10-15.
+
+### Added
+
+- **`skills/craft-content-modeling/references/relations-and-eager-loading.md`** -- since Craft 5.8.0 (craftcms/cms@895662a1) `Entry::getAuthors()` eager-loads `authors` for every entry in the same query result on first access, so a bare `entry.author` in a loop is one query with or without `.with(['author'])`; the batching stops at the authors, so `author.photo` and author fields still need `.with()`. New "Count-Only Eager Loading" section: a `count: true` eager load is stored apart from eager-loaded elements and is only readable through `getEagerLoadedElementCount()`, because `ElementQuery::count()` consults eager-loaded counts only on an `.eagerly()` query and the cached-result shortcut exists only when the elements were loaded, so `entry.field.count()` after a count-only `.with()` is a `COUNT` per entry. New "Link Fields Cannot Be Eager-Loaded" section: `craft\fields\Link` implements `RelationalFieldInterface` but not `EagerLoadingFieldInterface`, so `Element::eagerLoadingMap()` skips it, `.with(['linkField'])` loads nothing silently, the value stays a `LinkData` with no query to `.eagerly()`, and each `link.element` is its own query memoised per link value; batch the targets by hand or use an Entries/Assets field. Limitation 6, a table annotation and three pitfalls carry the same points.
+- **`skills/craft-site/references/element-partials.md`**, **`twig-collections.md`** -- the "native attributes need `.with(['author'])`" guidance now says authors self-batch since 5.8.0 and that `.with()` is for what hangs below them.
+
 ## 1.20.0 -- 2026-10-14
 
 Folds in Craft CMS 5.11.5 and 5.11.5.1 (released 2026-10-07 and 2026-10-08) and the plugin releases since the pack's last plugin pass: Formie 3.1.22 to 3.1.47, Feed Me 6.15.0 to 6.16.1, Blitz 5.12.10 to 5.13.4, CKEditor 5.9.0, Knock Knock 3.0.10 to 3.0.13, Navigation 4.0.3 to 4.0.7, Warp 5.0.3 and Vite 5.0.2. Every claim was checked against the tagged source or the fix diff on 2026-10-14. Also scopes the code reviewer's plugin file-organization checks to plugins ([#17](https://github.com/michtio/craftcms-claude-skills/issues/17), thanks **[@john-henry](https://github.com/john-henry)**).
