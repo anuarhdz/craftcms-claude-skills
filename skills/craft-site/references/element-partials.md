@@ -193,7 +193,7 @@ Use `.eagerly()` on **custom relation fields** to avoid N+1 queries when renderi
 
 `.eagerly()` batches queries across all partials in the same render cycle.
 
-**Native attributes can't be `.eagerly()`-loaded.** `entry.author` (also `entry.authors`, an asset's `uploader`, a user's `photo`) returns the element directly — not a query — so there's no `.eagerly()`/`.one()` to chain; `entry.author.eagerly()` throws. Cover them with `.with(['author'])` on the **outer** query instead, as the Blog card grid above does. See `craft-content-modeling` → `relations-and-eager-loading.md` for the full `.with()`-vs-`.eagerly()` rules.
+**Native attributes can't be `.eagerly()`-loaded.** `entry.author` (also `entry.authors`, an asset's `uploader`, a user's `photo`) returns the element directly — not a query — so there's no `.eagerly()`/`.one()` to chain; `entry.author.eagerly()` throws. Since Craft 5.8.0 `entry.author`/`entry.authors` batch themselves across the query result, so a bare `entry.author` in a partial costs one query per listing; anything below the author (`author.photo`, author fields) does not, so cover it with `.with(['author.photo'])` on the **outer** query, as the Blog card grid above does with `.with(['author'])`. See `craft-content-modeling` → `relations-and-eager-loading.md` for the full `.with()`-vs-`.eagerly()` rules.
 
 ### Asset partials
 

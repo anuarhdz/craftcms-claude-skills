@@ -199,7 +199,7 @@ Order the query first, then `unique` keeps the first occurrence per key:
 ```twig
 {%- set latestPerAuthor = craft.entries
     .section('blog')
-    .with(['author'])          {# native attribute — eager-load with .with(), never .eagerly() #}
+    .with(['author'])          {# native attribute — .with(), never .eagerly(); optional since 5.8.0, where authors self-batch #}
     .orderBy('postDate DESC')
     .collect
     .unique('authorId')        {# keeps the first (newest) entry per author #}
