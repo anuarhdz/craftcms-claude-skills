@@ -41,6 +41,7 @@ Use `WebFetch` on specific doc pages when a reference file doesn't cover enough 
 - Queries inside views — views receive data, they don't fetch it.
 - Missing `.eagerly()` on relation fields in views — causes N+1 queries.
 - Missing `devMode` fallback in builders for unknown block types.
+- A CSP nonce, `csrfInput()`, active nav state or language switcher inside `{% cache %}`. The first render is replayed to everyone. See `template-caching.md`.
 - Hardcoded Tailwind colors (`bg-yellow-600`) instead of brand tokens (`bg-brand-accent`).
 - Mixing buttons and links — buttons are actions (resolve to `<a>`, `<button>`, or `<span>` from props), links are navigation (always `<a>`). Separate atom categories.
 - Tracking/analytics inside components — decouple to data attributes at view/page level.
@@ -55,6 +56,9 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 - "Set up a new project's template structure" → read `boilerplate-routing.md` + `component-inventory.md`
 - "Add a content builder for a Matrix field" → read `boilerplate-routing.md` + `composition-patterns.md`
 - "Handle responsive images" → read `image-presets.md` + `plugins/image-optimize.md`
+- "Cache the nav/footer with `{% cache %}`" → read `template-caching.md`
+- "Scripts blocked by CSP / nonce mismatch after adding `{% cache %}`" → read `template-caching.md` (CSP Nonces)
+- "First page view after upload is slow / why are images `generate-transform` URLs" → read `image-presets.md` (Transform Generation Timing) + `plugins/image-optimize.md`
 - "Add multi-brand theming" → read `tailwind-conventions.md`
 - "Decide between Alpine and Vue for a feature" → read `javascript-boundaries.md`
 - "Compose Tailwind classes without conflicts" → read `tailwind-conventions.md` + `twig-collections.md`
@@ -113,7 +117,8 @@ Read the relevant reference file(s) for your task. Multiple files often apply to
 | `references/boilerplate-routing.md` | Template chain: layout hierarchy, Craft section template paths, global variables, routers, views, content builders, directory structure |
 | `references/tailwind-conventions.md` | Class composition: named-key collections, standard key names, `utilities` prop, variant-based dark mode, spacing preference. Assumes Tailwind CSS — adapt patterns to your CSS framework. |
 | `references/vite-buildchain.md` | Craft CMS Vite setup: nystudio107 plugin bridge, `config/vite.php`, `vite.config.ts`, `craft.vite.script()`, conditional per-page loading, Tailwind v4 integration, DDEV configuration |
-| `references/image-presets.md` | Image handling: single atom with presets, srcset/sizes, ImageOptimize vs Craft Cloud, hosting strategies |
+| `references/image-presets.md` | Image handling: single atom with presets, srcset/sizes, ImageOptimize vs Craft Cloud, hosting strategies, transform generation timing (`generateTransformsBeforePageLoad`) |
+| `references/template-caching.md` | `{% cache %}` tag: keying (per-URL, `globally`, `using key`), parameter order, what may and may not go inside, CSP nonces, nav/footer example with active state and language switcher outside, temporary transform URLs, verification recipe |
 | `references/javascript-boundaries.md` | JS decision tree: Twig → Alpine/DataStar → Vue, mount points, data handoff, coexistence rules |
 | `references/twig-collections.md` | `collect()` method reference: creating, accessing, transforming, filtering, sorting, slicing, arrow functions |
 | `references/third-party-integration.md` | Script loading order, CMP (UserCentrics/CookieBot), GTM/sGTM data layer, analytics (Fathom/Plausible), AWS SES transport, n8n webhooks, plugin CSS cascade (loads after yours) + hand-written templates for plugin widgets, Blitz compatibility, full head template example |

@@ -476,7 +476,7 @@ Craft uses these internally. Push them directly instead of writing custom equiva
 |-----------|--------------------|
 | `ResaveElements` | After bulk operations, field layout changes |
 | `UpdateSearchIndex` | After element saves |
-| `GenerateImageTransform` | When `generateTransformsBeforePageLoad` is false |
+| `GenerateImageTransform` | When `generateTransformsBeforePageLoad` is false: queued as a fallback for each missing transform; the temporary URL usually generates it first |
 | `ApplyNewPropagationMethod` | After changing section propagation method |
 | `PruneRevisions` | When `maxRevisions` config is lowered |
 | `FindAndReplace` | CP Utilities > Find and Replace |

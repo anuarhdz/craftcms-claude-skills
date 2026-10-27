@@ -114,7 +114,7 @@ See [docs/prompt-guide.md](docs/prompt-guide.md) for 40+ prompts organized by ta
 | `craftcms` | Plugin | Elements, queries, services, controllers, migrations, events, GraphQL, configuration, caching, permissions, CP templates (form macros, settings, navigation), CP components (widgets, utilities, slideouts), CP UI patterns (tri-state, condition builders, asset bundles), console commands (80+ commands), debugging, identity protocols for SSO/SCIM plugins. 31 reference files. |
 | `craft-php-guidelines` | Plugin | PHPDocs, section headers, naming, class organization, ECS/PHPStan. 6 reference files. |
 | `craft-content-modeling` | Site | Sections, entry types, fields, Matrix, relations, eager loading, entrification. Reuse-first field workflow. 7 reference files. |
-| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless. 19 reference files. |
+| `craft-site` | Site | Atomic design, component patterns, routing, Vite, auth flows, search, feeds, headless, template caching. 20 reference files. |
 | `craft-plugins` | Plugin References | Name-routed index of third-party plugin guidance (config, Twig/PHP API, migrations, deployment, pitfalls), discoverable from any task altitude. 24 plugin references. |
 | `craft-twig-guidelines` | Site | Variable naming, null handling, whitespace, include isolation, Craft helpers, `collect()`. |
 | `craft-garnish` | Plugin | Garnish CP JavaScript: class system, UI widgets, drag system, ARIA/focus, Craft.* pattern. 5 reference files. |

@@ -396,7 +396,7 @@ Note: These defaults only apply when no explicit search options are provided in 
 | `defaultImageQuality` | `int` | `82` | JPEG/WebP quality for transforms. |
 | `imageDriver` | `mixed` | `'auto'` | Image processing library: `'auto'`, `'gd'`, or `'imagick'`. |
 | `imageEditorRatios` | `array` | (see below) | Selectable aspect ratios in the image editor. Format: `label => ratio`. |
-| `generateTransformsBeforePageLoad` | `bool` | `false` | Generate transforms inline instead of via queue. Slower page loads. |
+| `generateTransformsBeforePageLoad` | `bool` | `false` | `true`: generate missing transforms inside the page request. `false`: output a temporary generate URL and queue a fallback job. |
 | `maxCachedCloudImageSize` | `int` | `0` | Max dimension for cached cloud images. `0` = never cache. Default changed from `2000` to `0` in 5.9.0. |
 | `optimizeImageFilesize` | `bool` | `true` | Strip unnecessary image data to reduce file size. |
 | `upscaleImages` | `bool` | `true` | Allow transforms to upscale beyond original dimensions. |
@@ -428,7 +428,12 @@ Default `imageEditorRatios`:
 
 `maxCachedCloudImageSize` was changed from `2000` to `0` in Craft 5.9.0. At `0`, Craft does not create local copies of remote images -- transforms are applied directly by the filesystem (e.g., S3/CloudFront). Set this to a nonzero value only if your cloud filesystem does not support transforms.
 
-`generateTransformsBeforePageLoad` generates all image transforms synchronously during the page request instead of queueing them. This avoids 404s for transforms that haven't been generated yet, but blocks the request until all transforms are complete. On pages with many transforms, this can cause timeouts.
+`generateTransformsBeforePageLoad` (docs: "Whether image transforms should be generated before page load") decides who generates a missing transform. Behaviour from `ImageTransformer::getTransformUrl()` in 5.11.5.1:
+
+- `false` (default): the page gets a temporary `actions/assets/generate-transform?transformId=N` URL. `AssetsController::actionGenerateTransform()` generates the file on the first image request and redirects to it. Craft also queues a `GenerateImageTransform` job "in case the temp URL never gets requested", and sends no-cache headers on that page response. Nothing 404s.
+- `true`: the page request generates every missing transform before it renders. It is slow on first view, and can hit `max_execution_time` on image-heavy pages or small hosts.
+
+Craft switches it on by itself for GraphQL responses and outgoing email. `{% cache %}` will not store a block containing a temporary URL. Plugins that hook transform generation (ImageOptimize on the Craft transform method) run their optimizers in whichever process generates the transform. See the `craft-site` skill's `image-presets.md` (Transform Generation Timing) and the `craft-plugins` skill's `image-optimize.md`.
 
 `transformGifs` at `false` means GIF files are served as-is, preserving animation. When `true`, transforms strip animation and output a single frame. Set to `false` if animated GIFs are important to your content.
 

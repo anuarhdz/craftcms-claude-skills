@@ -302,21 +302,22 @@ The `{% cache %}` tag caches rendered HTML. Craft tracks element queries inside 
 |--------|---------|--------|
 | `globally` | `{% cache globally %}` | Shared across all URLs (default: per-URL) |
 | `using key` | `{% cache using key "sidebar-nav" %}` | Custom cache key |
-| `for` | `{% cache for 3600 %}` or `{% cache for "1 hour" %}` | Explicit duration |
+| `for` | `{% cache for 1 hour %}` | Explicit duration: number, then a bare unit |
 | `if` | `{% cache if not currentUser %}` | Conditional caching |
 | `unless` | `{% cache unless craft.app.request.isPreview %}` | Inverse conditional |
-| `tag` | `{% cache tag('blog-list') %}` | Tag-based invalidation group |
 
-Options can be combined: `{% cache globally using key "footer-nav" for "6 hours" tag('navigation') %}`.
+Options combine only in this order: `globally`, `using key`, `for`/`until`, `if`/`unless`. Example: `{% cache globally using key "footer-nav" for 6 hours %}`. There is no `tag()` parameter.
 
 ### Invalidation
 
-Craft automatically tracks every element query inside a `{% cache %}` block. When those elements change, the cache is invalidated. For manual tag-based invalidation:
+Craft automatically tracks every element query inside a `{% cache %}` block. When those elements change, the cache is invalidated. Manual invalidation is all-or-nothing:
 
 ```bash
-ddev craft invalidate-tags/template --tag=blog-list   # Specific tag
-ddev craft invalidate-tags/all                         # All template caches
+ddev craft invalidate-tags/template   # All template caches
+ddev craft invalidate-tags/all        # Template and GraphQL caches
 ```
+
+To force one block to re-render, change its `using key`. Cache that never stores: look for a temporary `generate-transform` image URL inside the block (see the `craft-site` skill's `template-caching.md`).
 
 ### Key notes
 

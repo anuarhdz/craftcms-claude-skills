@@ -85,18 +85,19 @@ On the first request, the block renders normally and Craft stores the HTML outpu
 |--------|---------|--------|
 | `globally` | `{% cache globally %}` | Share cache across all URLs. Default is per-URL. |
 | `using key "x"` | `{% cache using key "sidebar" %}` | Custom cache key. Changing the key forces a fresh render. |
-| `for` | `{% cache for "1 hour" %}` | Explicit TTL. Accepts: sec, min, hour, day, week, month, year. |
+| `for` | `{% cache for 1 hour %}` | Explicit TTL: a number, then a bare unit (sec, min, hour, day, fortnight, week, month, year). Not a quoted string. |
 | `until` | `{% cache until entry.eventDate %}` | Expire at a specific DateTime object. |
 | `if` | `{% cache if not currentUser %}` | Only cache when the condition is true. |
 | `unless` | `{% cache unless currentUser %}` | Cache unless the condition is true. Same as `if not`. |
-| `tag('x')` | `{% cache tag('nav') %}` | Tag for manual invalidation via CLI or API. |
+
+There is no `tag()` parameter. `CacheTokenParser` accepts only the parameters above.
 
 ### Combining options
 
-Options can be chained in any order after `{% cache %}`:
+The parser reads parameters in one fixed order: `globally`, `using key`, `for`/`until`, `if`/`unless`. Any other order is a Twig syntax error.
 
 ```twig
-{% cache globally using key "footer-nav" for "6 hours" tag('navigation') %}
+{% cache globally using key "footer-nav" for 6 hours %}
     {% set navEntries = craft.entries.section('pages').level(1).all() %}
     <nav>
         {% for entry in navEntries %}
@@ -134,26 +135,33 @@ Use variables in the key to create per-context caches:
 # Invalidate all template caches
 ddev craft invalidate-tags/template
 
-# Invalidate all caches (template + data)
+# Invalidate every tag Craft lists (template caches and GraphQL query caches)
 ddev craft invalidate-tags/all
 
-# Invalidate by tag
-ddev craft invalidate-tags --tag=navigation
+# List the invalidatable tags
+ddev craft invalidate-tags
 ```
+
+The tags are fixed (`template`, `graphql`). There is no `--tag=` option and no per-block tag. To target one block, change its `using key`.
 
 **Manual via CP:** Utilities > Clear Caches > Template caches.
 
 **Manual via PHP (in plugins/modules):**
 
 ```php
-use craft\services\TemplateCaches;
+use yii\caching\TagDependency;
 
-// Invalidate all template caches
-Craft::$app->getTemplateCaches()->invalidateAllCaches();
+// Invalidate all template caches (what `invalidate-tags/template` runs)
+TagDependency::invalidate(Craft::$app->getCache(), 'template');
 
-// Invalidate by element (Craft does this automatically on save, but useful for custom triggers)
-Craft::$app->getTemplateCaches()->invalidateCachesByElementId($elementId);
+// Invalidate caches that depend on one element (Craft does this on save; use for custom triggers)
+Craft::$app->getElements()->invalidateCachesForElement($element);
+
+// Invalidate caches that depend on any element of a type
+Craft::$app->getElements()->invalidateCachesForElementType(Entry::class);
 ```
+
+`TemplateCaches` in Craft 5 has no `invalidateAllCaches()` or `invalidateCachesByElementId()`. Invalidation goes through cache tags.
 
 ### When NOT to cache
 
@@ -161,7 +169,9 @@ Craft::$app->getTemplateCaches()->invalidateCachesByElementId($elementId);
 - **Variable assignments needed outside the block** -- `{% set %}` inside `{% cache %}` does not propagate to the outer scope after the block is served from cache.
 - **Per-request dynamic content** -- CSRF tokens, nonces, timestamps, `now` references, logged-in user info.
 - **Randomized content** -- `shuffle` filters, random entry queries. The first render is frozen.
-- **Content that varies by URL params you did not account for** -- the default cache key includes the full URL, but if you use `globally` or a custom `key`, param-based variation is lost.
+- **Content that varies by query string** -- the default key is the request path (plus page number) "without regard for the query string", so `?q=` and `?sort=` variants share one entry. `globally` drops the path too. Put the query string in the key yourself when it matters.
+
+For the front-end checklist of what may go inside a block (CSP nonces, active nav state, language switcher, temporary transform URLs) and a verification recipe, see the `craft-site` skill's `template-caching.md`.
 
 ### Performance notes
 
@@ -516,11 +526,8 @@ If the timestamps differ, the inner block is being served from cache.
 # Clear all template caches
 ddev craft invalidate-tags/template
 
-# Clear all caches (template + data)
+# Invalidate template and GraphQL caches (the data cache is `ddev craft clear-caches/data`)
 ddev craft invalidate-tags/all
-
-# Clear specific tagged caches
-ddev craft invalidate-tags --tag=navigation
 
 # Clear from CP
 # Utilities > Clear Caches > Template caches
