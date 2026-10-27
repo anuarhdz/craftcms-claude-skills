@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.21.0 -- 2026-10-27
+
+Closes three gaps found while planning a performance change on a Craft 5 site: what may go inside `{% cache %}` (CSP nonces and per-page state), when Craft generates image transforms, and what ImageOptimize costs at request time. Verified on 2026-10-27 against the Craft 5 docs, `craftcms/cms` 5.11.5.1, `nystudio107/craft-imageoptimize` 5.0.8 and the 5.0.0 imgix, Sharp and Thumbor transform packages. Every source claim is cited with a tag-pinned URL.
+
+### Added
+
+- **`skills/craft-site/references/template-caching.md`** (new, 20th craft-site reference) -- how `{% cache %}` keys and stores output: per path with the query string ignored, `globally` per site (the site ID is always in the key, so a site handle in it is redundant), custom keys survive template edits so version them, element and query invalidation, captured `{% js %}`/`{% script %}`/`{% css %}`, the temporary-transform-URL hold-off, and the Live Preview/token bypass. It also gives the parser's fixed parameter order and a may/must-not-go-inside checklist. The CSP nonce rule is stated as an inference: a nonce inside a cached block is replayed to every visitor and a strict CSP blocks it, the same failure class as SEOmatic's. Includes a nav/footer example in two shapes (a per-URL cache keeping `aria-current`, or a global cache with active state outside), the language switcher kept outside, and a verification recipe. Linked from the craft-site task examples, reference table and pitfalls, from craft-twig-guidelines pitfall 16, and from the craftcms `caching.md`.
+- **`skills/craft-site/references/image-presets.md`** -- new "Transform Generation Timing" section from `ImageTransformer::getTransformUrl()`. With `generateTransformsBeforePageLoad` `false` (default), a missing transform renders as `actions/assets/generate-transform?transformId=N`, generated on the image request and then redirected. Craft also queues a fallback `GenerateImageTransform` job and sends no-cache headers on the page. `true` generates inline in the page request. Craft forces it on for GraphQL and email. The section covers how this interacts with `{% cache %}`, with full-page caches, and with ImageOptimize. With `runQueueAutomatically` on, a site request that pushes a job gets an inline queue-runner script with no nonce, which a strict CSP blocks. Four new pitfalls.
+- **`skills/craft-plugins/references/image-optimize.md`** -- new sections: "Request-Time Cost", "Transform Methods" (rewritten), "Queue Runner", "Caching Interaction", "Docs vs Source", and a self-hosted performance checklist.
+  - Request-Time Cost: on the Craft method, ImageOptimize runs its optimizers and cwebp inside `ImageTransformer::EVENT_TRANSFORM_IMAGE`, in whichever process generates a native transform. A table shows which process that is. Field variants and placeholders run in the `ResaveOptimizedImages` job. ImageOptimize's own `generateTransformsBeforePageLoad` forces Craft's setting on only for the URLs ImageOptimize builds. There is no `optimizeOriginals`/`autoGenerateVariants`, and originals are never modified.
+  - Transform Methods: only `transformClass` is instantiated, so a `defaultImageTransformTypes` list naming sharp, thumbor and imgix does nothing. What breaks is an unconfigured remote `transformClass` or missing optimizer binaries.
+  - Caching Interaction: every `ResaveOptimizedImages` job invalidates the `element::craft\elements\Asset` tag, clearing every `{% cache %}` block that touched any asset. A `.webp` derived from a temporary URL is broken until generation.
+  - Docs vs Source: four places where the plugin docs disagree with 5.0.8.
+- **`skills/craftcms/references/config-general.md`**, **`config-general-extended.md`**, **`queue-jobs.md`** -- `generateTransformsBeforePageLoad` described from source: temporary URL, fallback job and no-cache headers when `false`. The old text claimed `false` causes 404s.
+
+### Fixed
+
+- **`skills/craftcms/references/caching.md`**, **`debugging.md`** -- `{% cache %}` examples that do not parse: `tag('…')` (no such parameter), `for "6 hours"` and `for 3600` (`for` takes a number and a bare unit), and "options can be chained in any order" (the order is fixed). `invalidate-tags --tag=…` does not exist; the tags are `template` and `graphql`. `TemplateCaches::invalidateAllCaches()` and `invalidateCachesByElementId()` do not exist in Craft 5; replaced with `TagDependency::invalidate(…, 'template')` and `Elements::invalidateCachesForElement()`. "The default cache key includes the full URL" corrected to the path without the query string.
+- **`skills/craft-plugins/references/image-optimize.md`** -- removed Cloudinary as a transform method (only a third-party filesystem plugin) and the nonexistent `image-optimize/optimize/clear` command. Added `create-asset` and `--queue`. The config example now shows 5.0.8 defaults (`createPlaceholderSilhouettes` is `false`), and the transform-method table names the real classes, packages and settings.
+
 ## 1.20.1 -- 2026-10-15
 
 Closes three gaps in the eager-loading reference, each verified against the `craftcms/cms` `5.x` source on 2026-10-15.
